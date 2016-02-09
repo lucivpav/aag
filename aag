@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+require 'trollop'
+
+class FA
+  def initialize(input)
+    @n = Hash.new
+    @t = Array.new
+    @d = Hash.new {|h,k| h[k] = Array.new }
+    @s = String.new
+    @f = Hash.new
+
+    input = File.new(input)
+    line = input.readline.split
+    line[1..-1].each {|i| @t << i}
+
+    input.each_line do |x|
+      x = x.split
+
+      state = x[0].gsub(/[<>]/, "");
+      @n[state] = nil
+      if x[0].include? ">"
+        @s = state
+      end
+      if x[0].include? "<"
+        @f[state] = nil
+      end
+
+      x[1..-1].each_with_index do |x, i|
+        to = Array.new
+        if x != "-"
+          x.split(/\|/).each { |x| to << x }
+        end
+        @d[state] << to
+      end
+    end
+  end
+
+  def to_s
+    output = "NFA"
+    @t.each { |x| output += " #{x}" }
+    @n.each_key do |x|
+      output += "\n"
+      output += ">" if x == @s
+      output += "<" if @f.key?(x)
+      output += x
+      @d[x].each_with_index do |x,i|
+        output += " "
+        x.each_with_index do |x,i| 
+          output += "|" if i!=0 
+          output += x 
+        end
+        output += "-" if x.empty?
+      end
+    end
+    output
+  end
+
+  def eps_closure_state(n)
+    @visited[n] = nil
+    @d[n][-1].each do |x|
+      eps_closure_state(x) if !@visited.key?(x)
+    end
+  end
+
+  def eps_closure
+    closure = Hash.new {|h,k| h[k] = Array.new}
+    @n.each_key do |x|
+      @visited = Hash.new
+      eps_closure_state(x)
+      @visited.each_key {|y| closure[x] << y}
+    end
+    closure
+  end
+
+  def eps_closure_print
+    output = String.new
+    eps_closure.each do |state,to|
+      output += state + ": " + to.join("|") + "\n"
+    end
+    output
+  end
+end
+
+opts = Trollop::options do
+  opt :"eps-closure", "Compute epsilon closure"
+end
+
+if ARGV.count < 1
+  puts "Usage: aag --eps-closure input"
+  exit
+end
+
+fa = FA.new(ARGV[0])
+puts fa.eps_closure_print if opts[:"eps-closure"]
