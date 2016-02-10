@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'trollop'
+require 'ostruct'
 
 class FA
   def initialize(input)
@@ -64,19 +65,27 @@ class FA
   end
 
   def eps_closure
-    closure = Hash.new {|h,k| h[k] = Array.new}
+    closure = Hash.new {|h,k| h[k] = OpenStruct.new}
     @n.each_key do |x|
       @visited = Hash.new
       eps_closure_state(x)
-      @visited.each_key {|y| closure[x] << y}
+      closure[x].to = Array.new
+      closure[x].start = x == @s
+      closure[x].final = false
+      @visited.each_key {|y| closure[x].to << y}
+      @visited.each_key do |y|
+        closure[x].final = true if @f.key?(y)
+      end
     end
     closure
   end
 
   def eps_closure_print
     output = String.new
-    eps_closure.each do |state,to|
-      output += state + ": " + to.join("|") + "\n"
+    eps_closure.each do |state,x|
+      output += ">" if x.start
+      output += "<" if x.final
+      output += state + ": " + x.to.join("|") + "\n"
     end
     output
   end
