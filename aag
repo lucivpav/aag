@@ -28,9 +28,9 @@ class FA
       end
 
       x[1..-1].each_with_index do |x, i|
-        to = Array.new
+        to = Hash.new
         if x != "-"
-          x.split(/\|/).each { |x| to << x }
+          x.split(/\|/).each { |x| to[x] = nil }
         end
         @d[state] << to
       end
@@ -45,11 +45,13 @@ class FA
       output += ">" if x == @s
       output += "<" if @f.key?(x)
       output += x
-      @d[x].each_with_index do |x,i|
+      @d[x].each do |x|
         output += " "
-        x.each_with_index do |x,i| 
-          output += "|" if i!=0 
+        first = true
+        x.each_key do |x| 
+          output += "|" if !first 
           output += x 
+          first = false if first
         end
         output += "-" if x.empty?
       end
@@ -59,7 +61,7 @@ class FA
 
   def eps_closure_state(n)
     @visited[n] = nil
-    @d[n][-1].each do |x|
+    @d[n][-1].each_key do |x|
       eps_closure_state(x) if !@visited.key?(x)
     end
   end
@@ -89,16 +91,43 @@ class FA
     end
     output
   end
+
+  def eps_elimination
+    closure = eps_closure
+    @n.each_key {|x| @d[x].pop}
+    @t.pop # TODO: eps may not be the last transition
+    
+    @n.each_key do |x|
+      @f[x] = nil if closure[x].final
+    end
+
+    @n.each_key do |x|
+      closure[x].to.each do |y|
+        @d[y].each_with_index do |z,i|
+          z.each_key do |k|
+            @d[x][i][k]=nil
+          end
+        end
+      end
+    end
+  end
+
+  def eps_elimination_print
+    eps_elimination
+    self
+  end
 end
 
 opts = Trollop::options do
   opt :"eps-closure", "Compute epsilon closure"
+  opt :"eps-elimination", "Eliminate epsilon transitions"
 end
 
 if ARGV.count < 1
-  puts "Usage: aag --eps-closure input"
+  puts "Usage: aag [options] input"
   exit
 end
 
 fa = FA.new(ARGV[0])
 puts fa.eps_closure_print if opts[:"eps-closure"]
+puts fa.eps_elimination_print if opts[:"eps-elimination"]
