@@ -92,7 +92,7 @@ class FA
     output
   end
 
-  def eps_elimination
+  def remove_eps
     closure = eps_closure
     @n.each_key {|x| @d[x].pop}
     @t.pop # TODO: eps may not be the last transition
@@ -110,17 +110,72 @@ class FA
         end
       end
     end
+    self
   end
 
-  def eps_elimination_print
-    eps_elimination
+  def useless?(n)
+    @visited[n] = nil
+    return false if @f.key?(n)
+    @d[n].each do |x|
+      x.each_key do |y|
+        useless = true
+        useless = useless?(y) if !@visited.key?(y)
+        return false if !useless
+      end
+    end
+    return true
+  end
+
+  def remove_useless
+    useless = Hash.new
+    @n.each_key do |x|
+      @visited = Hash.new
+      useless[x] = nil if useless?(x)
+    end
+    useless.each_key do |x|
+      @n.delete(x)
+    end
+    self
+  end
+
+  def unreachable?(n)
+    @visited[n] = nil
+    return false if @s == n
+    @d.each do |state,x|
+      next if state == n
+      found = false
+      x.each do |y|
+        if y.key?(n)
+          found = true
+          break
+        end
+      end
+      next if !found
+      unreachable = false
+      unreachable = unreachable?(state) if !@visited.key?(state)
+      return false if !unreachable
+    end
+    return true
+  end
+
+  def remove_unreachable
+    unreachable = Hash.new
+    @n.each_key do |x|
+      @visited = Hash.new
+      unreachable[x] = nil if unreachable?(x)
+    end
+    unreachable.each_key do |x|
+      @n.delete(x)
+    end
     self
   end
 end
 
 opts = Trollop::options do
   opt :"eps-closure", "Compute epsilon closure"
-  opt :"eps-elimination", "Eliminate epsilon transitions"
+  opt :"remove-eps", "Remove epsilon transitions"
+  opt :"remove-useless", "Remove useless states"
+  opt :"remove-unreachable", "Remove unreachable states"
 end
 
 if ARGV.count < 1
@@ -130,4 +185,6 @@ end
 
 fa = FA.new(ARGV[0])
 puts fa.eps_closure_print if opts[:"eps-closure"]
-puts fa.eps_elimination_print if opts[:"eps-elimination"]
+puts fa.remove_eps if opts[:"remove-eps"]
+puts fa.remove_useless if opts[:"remove-useless"]
+puts fa.remove_unreachable if opts[:"remove-unreachable"]
