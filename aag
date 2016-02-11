@@ -38,7 +38,7 @@ class FA
   end
 
   def to_s
-    output = "NFA"
+    output = deterministic? ? "DFA" : "NFA"
     @t.each { |x| output += " #{x}" }
     @n.each_key do |x|
       output += "\n"
@@ -169,6 +169,59 @@ class FA
     end
     self
   end
+
+  def determinize
+    remove_eps
+    remove_useless
+    mergeSymbol = "-"
+    while true do
+      newStates = Hash.new
+      @d.each do |state,x|
+        x.each_with_index do |y,i|
+          newState = y.keys.sort.join(mergeSymbol)
+          next if y.empty?
+          @d[state][i]= {newState => nil}
+          newStates[newState] = nil if !@n.key?(newState)
+        end
+      end
+      break if newStates.empty?
+      newStates.each_key do |x|
+        @n[x] = nil
+        for i in 0..@t.size-1
+        to = Hash.new
+          x.split(mergeSymbol).each do |y|
+            next if @d[y][i].empty?
+            target = @d[y][i].keys[0]
+            has = false
+
+            target.split(mergeSymbol).each do |t|
+              to.each_key do |k|
+                if k.split(mergeSymbol).include?(t)
+                  has = true
+                  break
+                end
+              end
+            end
+
+            to[target] = nil if !has
+          end
+        @d[x] << to
+        end
+        x.split(mergeSymbol).each {|z| @f[x]=nil if @f.key?(z)}
+      end
+    end
+    remove_unreachable
+    self
+  end
+
+  def deterministic?
+    @n.each_key do |n|
+      for i in 0..@t.size-1
+        return false if @d[n][i].size > 1
+      end
+    end
+    true
+  end
 end
 
 opts = Trollop::options do
@@ -176,6 +229,7 @@ opts = Trollop::options do
   opt :"remove-eps", "Remove epsilon transitions"
   opt :"remove-useless", "Remove useless states"
   opt :"remove-unreachable", "Remove unreachable states"
+  opt :"determinize", "Determinize finite automata"
 end
 
 if ARGV.count < 1
@@ -188,3 +242,4 @@ puts fa.eps_closure_print if opts[:"eps-closure"]
 puts fa.remove_eps if opts[:"remove-eps"]
 puts fa.remove_useless if opts[:"remove-useless"]
 puts fa.remove_unreachable if opts[:"remove-unreachable"]
+puts fa.determinize if opts[:"determinize"]
