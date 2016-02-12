@@ -8,7 +8,7 @@ class FA
     @n = Hash.new
     @t = Array.new
     @d = Hash.new {|h,k| h[k] = Array.new }
-    @s = String.new
+    @s = Hash.new
     @f = Hash.new
 
     input = File.new(input)
@@ -21,7 +21,7 @@ class FA
       state = x[0].gsub(/[<>]/, "");
       @n[state] = nil
       if x[0].include? ">"
-        @s = state
+        @s[state] = nil
       end
       if x[0].include? "<"
         @f[state] = nil
@@ -42,7 +42,7 @@ class FA
     @t.each { |x| output += " #{x}" }
     @n.each_key do |x|
       output += "\n"
-      output += ">" if x == @s
+      output += ">" if @s.key?(x)
       output += "<" if @f.key?(x)
       output += x
       @d[x].each do |x|
@@ -72,7 +72,7 @@ class FA
       @visited = Hash.new
       eps_closure_state(x)
       closure[x].to = Array.new
-      closure[x].start = x == @s
+      closure[x].start = @s.key?(x)
       closure[x].final = false
       @visited.each_key {|y| closure[x].to << y}
       @visited.each_key do |y|
@@ -93,6 +93,7 @@ class FA
   end
 
   def remove_eps
+    remove_multiple_start_symbols
     closure = eps_closure
     @n.each_key {|x| @d[x].pop}
     @t.pop # TODO: eps may not be the last transition
@@ -127,6 +128,7 @@ class FA
   end
 
   def remove_useless
+    remove_multiple_start_symbols
     useless = Hash.new
     @n.each_key do |x|
       @visited = Hash.new
@@ -140,7 +142,7 @@ class FA
 
   def unreachable?(n)
     @visited[n] = nil
-    return false if @s == n
+    return false if @s.key?(n)
     @d.each do |state,x|
       next if state == n
       found = false
@@ -159,6 +161,7 @@ class FA
   end
 
   def remove_unreachable
+    remove_multiple_start_symbols
     unreachable = Hash.new
     @n.each_key do |x|
       @visited = Hash.new
@@ -222,6 +225,19 @@ class FA
     end
     true
   end
+
+  def remove_multiple_start_symbols
+    return self if @s.count < 2
+    startSymbol = "_S" #TODO: unique name
+    @n[startSymbol] = nil
+    for i in 1..@t.size do @d[startSymbol] << Hash.new end
+    @s.each_key do |x|
+      @d[startSymbol][@t.size-1][ x ] = nil
+    end
+    @s = Hash.new
+    @s[startSymbol] = nil
+    self
+  end
 end
 
 opts = Trollop::options do
@@ -230,6 +246,8 @@ opts = Trollop::options do
   opt :"remove-useless", "Remove useless states"
   opt :"remove-unreachable", "Remove unreachable states"
   opt :"determinize", "Determinize finite automata"
+  opt :"remove-multiple-start-symbols",
+        "Replace multiple start symbols by one symbol"
 end
 
 if ARGV.count < 1
@@ -243,3 +261,4 @@ puts fa.remove_eps if opts[:"remove-eps"]
 puts fa.remove_useless if opts[:"remove-useless"]
 puts fa.remove_unreachable if opts[:"remove-unreachable"]
 puts fa.determinize if opts[:"determinize"]
+puts fa.remove_multiple_start_symbols if opts[:"remove-multiple-start-symbols"]
