@@ -181,7 +181,11 @@ class FA
       newStates = Hash.new
       @d.each do |state,x|
         x.each_with_index do |y,i|
-          newState = y.keys.sort.join(mergeSymbol)
+          new = Hash.new
+          y.each_key do |x|
+            x.split(mergeSymbol).each {|y| new[y]=nil}
+          end
+          newState = new.keys.sort.join(mergeSymbol)
           next if y.empty?
           @d[state][i]= {newState => nil}
           newStates[newState] = nil if !@n.key?(newState)
