@@ -177,6 +177,7 @@ class FA
   end
 
   def determinize
+    remove_multiple_start_symbols
     remove_eps
     remove_useless
     mergeSymbol = "-"
