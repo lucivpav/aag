@@ -238,6 +238,25 @@ class FA
     @s[startSymbol] = nil
     self
   end
+
+  def reverse
+    d = Hash.new {|h,k| h[k] = Array.new }
+    @d.each do |from, x|
+      x.each do |y|
+        d[from] << Hash.new
+      end
+    end
+    @d.each do |from, x|
+      x.each_with_index do |y,i|
+        y.each_key do |z|
+          d[z][i][from] = nil
+        end
+      end
+    end
+    @d = d
+    @s, @f = @f, @s
+    self
+  end
 end
 
 opts = Trollop::options do
@@ -248,6 +267,7 @@ opts = Trollop::options do
   opt :"determinize", "Determinize finite automata"
   opt :"remove-multiple-start-symbols",
         "Replace multiple start symbols by one symbol"
+  opt :"reverse", "Reverse finite automata"
 end
 
 if ARGV.count < 1
@@ -262,3 +282,4 @@ puts fa.remove_useless if opts[:"remove-useless"]
 puts fa.remove_unreachable if opts[:"remove-unreachable"]
 puts fa.determinize if opts[:"determinize"]
 puts fa.remove_multiple_start_symbols if opts[:"remove-multiple-start-symbols"]
+puts fa.reverse if opts[:"reverse"]
