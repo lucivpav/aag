@@ -228,7 +228,12 @@ class FA
 
   def remove_multiple_start_symbols
     return self if @s.count < 2
-    startSymbol = "_S" #TODO: unique name
+
+    startSymbol = "S"
+    while @s.key?(startSymbol) do
+      startSymbol = "_" + startSymbol
+    end
+
     @n[startSymbol] = nil
     for i in 1..@t.size do @d[startSymbol] << Hash.new end
     @s.each_key do |x|
