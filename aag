@@ -93,6 +93,7 @@ class FA
   end
 
   def remove_eps
+    return self if !@t.include?("\\eps")
     remove_multiple_start_symbols
     closure = eps_closure
     @n.each_key {|x| @d[x].pop}
