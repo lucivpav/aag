@@ -170,6 +170,7 @@ class FA
     end
     unreachable.each_key do |x|
       @n.delete(x)
+      @d.delete(x)
     end
     self
   end
