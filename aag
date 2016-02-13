@@ -240,6 +240,13 @@ class FA
       startSymbol = "_" + startSymbol
     end
 
+    if !@t.include?("\\eps")
+      @t << "\\eps"
+      @n.each_key do |x|
+        @d[x] << Hash.new
+      end
+    end
+
     @n[startSymbol] = nil
     for i in 1..@t.size do @d[startSymbol] << Hash.new end
     @s.each_key do |x|
