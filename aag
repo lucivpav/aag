@@ -230,7 +230,7 @@ class FA
     return self if @s.count < 2
 
     startSymbol = "S"
-    while @s.key?(startSymbol) do
+    while @n.key?(startSymbol) do
       startSymbol = "_" + startSymbol
     end
     if !@t.include?("\\eps")
