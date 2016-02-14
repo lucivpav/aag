@@ -182,43 +182,35 @@ class FA
     remove_useless
     mergeSymbol = "-"
     while true do
-      newStates = Hash.new
+      newStates = Array.new
       @d.each do |state,x|
         x.each_with_index do |y,i|
-          new = Hash.new
-          y.each_key do |x|
-            x.split(mergeSymbol).each {|y| new[y]=nil}
-          end
-          newState = new.keys.sort.join(mergeSymbol)
           next if y.empty?
-          @d[state][i]= {newState => nil}
-          newStates[newState] = nil if !@n.key?(newState)
+          new = OpenStruct.new
+          new.from = y.dup
+          tmp = Hash.new
+          y.each_key do |x|
+            x.split(mergeSymbol).each {|y| tmp[y]=nil}
+          end
+          new.name = tmp.keys.sort.join(mergeSymbol)
+          @d[state][i] = { new.name => nil}
+          newStates << new if !@n.key?(new.name)
         end
       end
       break if newStates.empty?
-      newStates.each_key do |x|
-        @n[x] = nil
+      newStates.each do |x|
+        next if @n.key?(x.name)
+        @n[x.name] = nil
         for i in 0..@t.size-1
-        to = Hash.new
-          x.split(mergeSymbol).each do |y|
-            next if @d[y][i].empty?
+          to = Hash.new
+          x.from.each_key do |y|
+            next if !@d.key?(y) || @d[y][i].empty?
             target = @d[y][i].keys[0]
-            has = false
-
-            target.split(mergeSymbol).each do |t|
-              to.each_key do |k|
-                if k.split(mergeSymbol).include?(t)
-                  has = true
-                  break
-                end
-              end
-            end
-
-            to[target] = nil if !has
+            to[target] = nil
           end
-        @d[x] << to
+          @d[x.name] << to
         end
-        x.split(mergeSymbol).each {|z| @f[x]=nil if @f.key?(z)}
+        x.from.each_key {|z| @f[x.name]=nil if @f.key?(z)}
       end
     end
     remove_unreachable
@@ -241,7 +233,6 @@ class FA
     while @s.key?(startSymbol) do
       startSymbol = "_" + startSymbol
     end
-
     if !@t.include?("\\eps")
       @t << "\\eps"
       @n.each_key do |x|
