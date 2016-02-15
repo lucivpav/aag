@@ -305,6 +305,14 @@ class FA
       end
     end
   end
+
+  def minimize
+      reverse
+      determinize
+      reverse
+      determinize
+    self
+  end
 end
 
 opts = Trollop::options do
@@ -316,6 +324,7 @@ opts = Trollop::options do
   opt :"remove-multiple-start-symbols",
         "Replace multiple start symbols by one symbol"
   opt :"reverse", "Reverse finite automata"
+  opt :"minimize", "Minimize deterministic finite automata"
 end
 
 if ARGV.count < 1
@@ -328,6 +337,11 @@ puts fa.eps_closure_print if opts[:"eps-closure"]
 puts fa.remove_eps if opts[:"remove-eps"]
 puts fa.remove_useless if opts[:"remove-useless"]
 puts fa.remove_unreachable if opts[:"remove-unreachable"]
-puts fa.determinize if opts[:"determinize"]
 puts fa.remove_multiple_start_symbols if opts[:"remove-multiple-start-symbols"]
 puts fa.reverse if opts[:"reverse"]
+
+if opts[:"determinize"]
+  fa.determinize
+  fa.minimize if opts[:"minimize"]
+  puts fa
+end
