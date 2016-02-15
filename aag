@@ -214,6 +214,7 @@ class FA
       end
     end
     remove_unreachable
+    normalize_state_names
     self
   end
 
@@ -267,6 +268,42 @@ class FA
     @d = d
     @s, @f = @f, @s
     self
+  end
+
+  def normalize_state_names
+    names = Hash.new
+    i=0
+    @n.each_key do |x|
+      names[x] = (i+=1).to_s
+    end
+    @n.clear
+    names.each_value {|x| @n[x] = nil}
+
+    @d.each do |from, x|
+      x.each_with_index do |y,i|
+        new = Hash.new
+        y.each_key do |z|
+          new[ names[z] ] = nil
+        end
+        @d[from][i] = new
+      end
+    end
+
+    d = @d.dup
+    s = @s.dup
+    f = @f.dup
+    @d.clear
+    @s.clear
+    @f.clear
+    names.each do |from,to|
+      @d[to] = d[from]
+      if s.key?(from)
+        @s[to] = nil
+      end
+      if f.key?(from)
+        @f[to] = nil
+      end
+    end
   end
 end
 
