@@ -50,7 +50,7 @@ class FA
         first = true
         x.each_key do |x| 
           output += "|" if !first 
-          output += x 
+          output += x
           first = false if first
         end
         output += "-" if x.empty?
@@ -154,7 +154,7 @@ class FA
         end
       end
       next if !found
-      unreachable = false
+      unreachable = true
       unreachable = unreachable?(state) if !@visited.key?(state)
       return false if !unreachable
     end
