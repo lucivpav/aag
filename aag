@@ -4,6 +4,12 @@ require 'trollop'
 require 'ostruct'
 
 class FA
+    attr_reader :n
+    attr_reader :t
+    attr_reader :d
+    attr_reader :f
+    attr_reader :s
+
   def initialize(input)
     @n = Hash.new
     @t = Array.new
@@ -313,6 +319,49 @@ class FA
       determinize
     self
   end
+
+  def equal(a)
+    determinize
+    minimize
+    a.determinize
+    a.minimize
+
+    cur = OpenStruct.new
+    cur.s1 = @s.keys[0]
+    cur.s2 = a.s.keys[0]
+    found = Hash.new
+
+    equal_r(a, cur, found)
+  end
+
+  def equal_r(a, cur, found)
+    if found.key?(cur)
+      return found[cur]
+    end
+
+    s1 = cur.s1
+    s2 = cur.s2
+
+    return false if @f.key?(s1) != a.f.key?(s2)
+
+    @d[s1].each_with_index do |x,i|
+      return false if x.empty? != a.d[s2][i].empty?
+    end
+
+    found[cur] = true
+
+    @d[s1].each_with_index do |x,i|
+      next if x.empty? || a.d[s2][i].empty?
+      cur.s1 = x.keys[0]
+      cur.s2 = a.d[s2][i].keys[0]
+      if !equal_r(a, cur, found)
+        found.remove(cur)
+        return false
+      end
+    end
+
+    return true
+  end
 end
 
 opts = Trollop::options do
@@ -325,6 +374,7 @@ opts = Trollop::options do
         "Replace multiple start symbols by one symbol"
   opt :"reverse", "Reverse finite automata"
   opt :"minimize", "Minimize deterministic finite automata"
+  opt :"equal", "Check two finite automata for equivalence"
 end
 
 if ARGV.count < 1
@@ -344,4 +394,9 @@ if opts[:"determinize"]
   fa.determinize
   fa.minimize if opts[:"minimize"]
   puts fa
+end
+
+if opts[:"equal"] && ARGV.count == 2
+  fa2 = FA.new(ARGV[1])
+  puts fa.equal(fa2)
 end
