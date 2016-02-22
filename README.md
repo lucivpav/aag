@@ -12,7 +12,12 @@ Transform (non-)deterministic finite automaton into a deterministic finite autom
 ```
 aag --determinize input
 ```
-### (Non-)deterministic finite automaton syntax
+
+Check whether two finite automata are equal
+```
+aag --equal a1 a2
+```
+### Finite automaton syntax
 
 ```
 NFA  a  b  c   \eps
